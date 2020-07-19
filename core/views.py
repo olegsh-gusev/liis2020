@@ -61,7 +61,7 @@ def register(request):
     # password_confirmed
     password = request.data.get('password', None)
 
-    if first_name =='' and last_name =='':
+    if first_name == '' and last_name == '':
         return Response("add first_name or last_name", status=HTTP_400_BAD_REQUEST)
 
     if email is not None:
@@ -72,7 +72,8 @@ def register(request):
     username = first_name + last_name
     while User.objects.filter(username=username).exists():
         username += str(random.randint(1, 100))
-    User.objects.create_user(username=username, first_name=first_name, last_name=last_name,  email= email, password=password)
+    User.objects.create_user(username=username, first_name=first_name, last_name=last_name, email=email,
+                             password=password)
     return Response('Username: ' + username, status=HTTP_200_OK)
 
 

@@ -1,9 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# further AbstractUser (now not need email, is_staff, all names ...)
-from rest_framework.fields import TimeField
-
 
 class User(AbstractUser):
     def __str__(self):
@@ -13,6 +10,7 @@ class User(AbstractUser):
 class WorkPlace(models.Model):
     name = models.CharField(max_length=30, blank=True)
     address = models.CharField(max_length=30, blank=True)
+
     # TODO add is_active?
 
     def __str__(self):
@@ -28,4 +26,5 @@ class Reservation(models.Model):
     def save(self, *args, **kwargs):
         if self.date_from > self.date_to:
             raise ValueError('date_from>date_to')
+        # check reservation time?
         super(Reservation, self).save(*args, **kwargs)
