@@ -24,3 +24,8 @@ class Reservation(models.Model):
     workplace = models.ForeignKey(WorkPlace, on_delete=models.CASCADE)
     date_from = models.DateTimeField()
     date_to = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        if self.date_from > self.date_to:
+            raise ValueError('date_from>date_to')
+        super(Reservation, self).save(*args, **kwargs)
