@@ -25,7 +25,7 @@ def reservation_info(request):
         reservation_id = int(request.query_params.get('id'))
     except (TypeError, ValueError):
         return response_incorrect_id()
-    return Response(ReservationSerializer(Reservation.objects.filter(pk=reservation_id), many=True).data,
+    return Response(ReservationSerializer(Reservation.objects.filter(workplace=reservation_id), many=True).data,
                     status=HTTP_200_OK)
 
 
