@@ -13,6 +13,7 @@ class User(AbstractUser):
 class WorkPlace(models.Model):
     name = models.CharField(max_length=30, blank=True)
     address = models.CharField(max_length=30, blank=True)
+    # TODO add is_active?
 
     def __str__(self):
         return self.name
