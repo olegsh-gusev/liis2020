@@ -1,8 +1,7 @@
-from django.contrib.auth.admin import UserAdmin
-
-from core.models import User
+from core.models import User, WorkPlace, Reservation
 
 from django.contrib import admin
 
-# admin.site.register(User, UserAdmin)
 admin.site.register(User)
+admin.site.register(WorkPlace)
+admin.site.register(Reservation)
