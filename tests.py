@@ -56,36 +56,35 @@ class ModelsPlaceTestCase(TestCase):
         datetime_from = str(real_datetime_from)
         real_datetime_to = self.date_time_now + datetime.timedelta(hours=5)
         datetime_to = str(real_datetime_to)
-        print(datetime_from)
-        request.query_params = {'datetime_from': datetime_from, 'datetime_to': datetime_to}
+        request.data = {'datetime_from': datetime_from, 'datetime_to': datetime_to}
         self.assertEqual((real_datetime_from, real_datetime_to), (get_date(request)),
                          'datetime_from and datetime_to are included')
-        request.query_params = {'datetime_from': datetime_from}
+        request.data = {'datetime_from': datetime_from}
         new_datetime_from, new_datetime_to = get_date(request)
         datetime_from_get_date = real_datetime_from + datetime.timedelta(hours=8)
         self.assertEqual(real_datetime_from, new_datetime_from, 'only is included')
         datetime_to_get_date = real_datetime_from + datetime.timedelta(hours=8)
         self.assertTrue(datetime_from_get_date <= new_datetime_to <= datetime_to_get_date, 'only is included')
-        request.query_params = {'datetime_from': 'datetime_from'}
+        request.data = {'datetime_from': 'datetime_from'}
         with self.assertRaises(Exception) as context:
             get_date(request)
         self.assertTrue('Unknown string format: datetime_from' in str(context.exception))
-        request.query_params = {'datetime_from': 'datetime_from'}
+        request.data = {'datetime_from': 'datetime_from'}
         with self.assertRaises(Exception) as context:
             get_date(request)
         self.assertTrue('Unknown string format: datetime_from' in str(context.exception),
                         'Unknown string format: datetime_from')
-        request.query_params = {'datetime_to': 'datetime_to'}
+        request.data = {'datetime_to': 'datetime_to'}
         with self.assertRaises(Exception) as context:
             get_date(request)
         self.assertTrue('Unknown string format: datetime_to' in str(context.exception),
                         'Unknown string format: datetime_to')
-        request.query_params = {'datetime_from': datetime_to, 'datetime_to': datetime_from}
+        request.data = {'datetime_from': datetime_to, 'datetime_to': datetime_from}
         with self.assertRaises(ValueError) as context:
             get_date(request)
         self.assertTrue('datetime_from < datetime_to' in str(context.exception), 'datetime_from < datetime_to')
 
-        request.query_params = {'datetime_from': str(self.date_time_now - datetime.timedelta(hours=4)),
+        request.data = {'datetime_from': str(self.date_time_now - datetime.timedelta(hours=4)),
                                 'datetime_to': datetime_from}
         with self.assertRaises(ValueError) as context:
             get_date(request)
@@ -94,7 +93,7 @@ class ModelsPlaceTestCase(TestCase):
     def test_register(self):
         response = self.client.post('/api/register/', {'first name': 'UserName', 'password': 'smith'})
         self.assertEqual(response.status_code, 200)
-        self.assertTrue('Username: UserName' in str(response.content))
+        self.assertTrue(str('{"Username": "UserName"}') in str(response.content))
         self.assertEqual(User.objects.get(username="UserName").first_name, 'UserName')
         response = self.client.post('/api/register/', {'password': 'smith'})
         self.assertEqual(response.status_code, 400)
@@ -106,9 +105,9 @@ class ModelsPlaceTestCase(TestCase):
 
     def test_vacant_space(self):
         workplace2 = WorkPlace.objects.create(name="work2", address="address2")
-        workplace2_result = [{'id': 2, 'name': 'work2', 'address': 'address2'}]
-        all_workplace = [{"id": 1, "name": "work", "address": "address"},
-                         {"id": 2, "name": "work2", "address": "address2"}]
+        workplace2_result = {"Answer": [{'id': 2, 'name': 'work2', 'address': 'address2'}]}
+        all_workplace = {"Answer": [{"id": 1, "name": "work", "address": "address"},
+                         {"id": 2, "name": "work2", "address": "address2"}]}
         auth_headers = {
             'HTTP_AUTHORIZATION': 'Basic ' + base64.b64encode(b'admin:admin').decode("ascii"),
         }
@@ -122,8 +121,8 @@ class ModelsPlaceTestCase(TestCase):
         self.assertEquals(response.status_code, 200, 'status_code = 200')
         response = self.client.get('/api/vacant_space/?datetime_from=' + str(
             self.date_time_now + datetime.timedelta(hours=1)) + '&datetime_to='
-                                   + str(self.date_time_now + datetime.timedelta(hours=2)),
-                                   **auth_headers)
+                                   + str(self.date_time_now + datetime.timedelta(hours=2)), **auth_headers)
+
         self.assertEquals(all_workplace, json.loads(response.content), 'all workplace')
         self.assertEquals(response.status_code, 200, 'status_code = 200')
 
@@ -167,49 +166,49 @@ class ModelsPlaceTestCase(TestCase):
         self.assertEquals(response.status_code, 400, 'status_code = 400')
         self.assertTrue('Not correct id' in str(response.content), 'Not correct id')
         response = self.client.post(
-            '/api/reservation/?id=1&datetime_from=' + str(self.date_time_now - datetime.timedelta(minutes=1)),
+            '/api/reservation/', {'id': '1', 'datetime_from': str(self.date_time_now - datetime.timedelta(minutes=1))},
             **auth_headers)
         self.assertTrue('Please, use right date format: datetime_from < date_time_now' in str(response.content),
                         'datetime_from < date_time_now')
         self.assertEquals(response.status_code, 400, 'status_code = 400')
 
         response = self.client.post(
-            '/api/reservation/?id=1&datetime_from=qwerty',
+            '/api/reservation/', {'id':'1', 'datetime_from':'qwerty'},
             **auth_headers)
         self.assertTrue('Please, use right date format: Unknown string format: qwerty' in str(response.content),
                         'use right date format')
         self.assertEquals(response.status_code, 400, 'status_code = 400')
 
         response = self.client.post(
-            '/api/reservation/?id=1&datetime_from=' + str(
-                self.date_time_now + datetime.timedelta(minutes=2)) + '&datetime_to=' + str(
-                self.date_time_now + datetime.timedelta(minutes=1)),
+            '/api/reservation/', {'id': '1', 'datetime_from': str(
+                self.date_time_now + datetime.timedelta(minutes=2)), 'datetime_to' :str(
+                self.date_time_now + datetime.timedelta(minutes=1))},
             **auth_headers)
         self.assertTrue('Please, use right date format: datetime_from < datetime_to' in str(response.content),
                         'datetime_from < datetime_to')
         self.assertEquals(response.status_code, 400, 'status_code = 400')
 
         response = self.client.post(
-            '/api/reservation/?id=' + str(workplace.id) + '&datetime_from=' + str(
-                self.date_time_now + datetime.timedelta(minutes=30)) + '&datetime_to=' + str(
-                self.date_time_now + datetime.timedelta(minutes=45)),
+            '/api/reservation/',{'id': str(workplace.id), 'datetime_from' : str(
+                self.date_time_now + datetime.timedelta(minutes=30)), 'datetime_to' : str(
+                self.date_time_now + datetime.timedelta(minutes=45))},
             **auth_headers)
         self.assertEquals(response.status_code, 200, 'status_code = 200')
         self.assertTrue('Reservation created' in str(response.content), 'Reservation created')
 
         response = self.client.post(
-            '/api/reservation/?id=' + str(workplace.id) + '&datetime_from=' + str(
-                self.date_time_now + datetime.timedelta(minutes=30)) + '&datetime_to=' + str(
-                self.date_time_now + datetime.timedelta(minutes=45)),
+            '/api/reservation/', {'id': str(workplace.id), 'datetime_from': str(
+                self.date_time_now + datetime.timedelta(minutes=30)), 'datetime_to': str(
+                self.date_time_now + datetime.timedelta(minutes=45))},
             **auth_headers)
         self.assertEquals(response.status_code, 400, 'status_code = 400')
         self.assertTrue('Cannot make reservation for this period of time' in str(response.content),
                         'Cannot make reservation for this period of time')
         # WorkPlace.objects.all().order_by('id').last().id+1
         response = self.client.post(
-            '/api/reservation/?id=0&datetime_from=' + str(
-                self.date_time_now + datetime.timedelta(minutes=30)) + '&datetime_to=' + str(
-                self.date_time_now + datetime.timedelta(minutes=45)),
+            '/api/reservation/',{'id':'0','datetime_from' : str(
+                self.date_time_now + datetime.timedelta(minutes=30)), 'datetime_to' : str(
+                self.date_time_now + datetime.timedelta(minutes=45))},
             **auth_headers)
         self.assertEquals(response.status_code, 400, 'status_code = 400')
         self.assertTrue('WorkPlace with this id does not exists' in str(response.content),
@@ -235,11 +234,10 @@ class ModelsPlaceTestCase(TestCase):
         response = self.client.get(
             '/api/reservation_info/?id=0', **auth_headers)
         self.assertEquals(response.status_code, 200, 'status_code = 200')
-        self.assertTrue(response.content.decode("ascii") == '[]', '[] id=0')
+        self.assertTrue(response.content.decode("ascii") == '{"Answer": []}', '[] id=0')
 
         response = self.client.get(
             '/api/reservation_info/?id=1', **auth_headers)
         self.assertEquals(response.status_code, 200, 'status_code = 200')
-        print(response.content.decode("ascii"))
-        self.assertTrue('date_from' and 'date_to' and '"username":"username2"' in response.content.decode("ascii"),
+        self.assertTrue("date_from" and 'date_to' and '"username": "username2"' in str(response.content.decode("ascii")),
                         'Reservation info')
